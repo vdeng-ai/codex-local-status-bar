@@ -1,0 +1,48 @@
+name: Bug report
+description: Report a problem with the GNOME Shell extension
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not attach `~/.codex/auth.json`, credentials, or full session transcripts.
+
+  - type: input
+    id: gnome
+    attributes:
+      label: GNOME Shell version
+      placeholder: "GNOME Shell 46.0"
+    validations:
+      required: true
+
+  - type: input
+    id: distro
+    attributes:
+      label: Distribution
+      placeholder: "Ubuntu 24.04"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Extension version / commit
+      placeholder: "v0.2.1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the expected and actual behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant GNOME Shell logs
+      description: "Use: journalctl --user -b | grep -F 'Codex Local Status Bar'"
+      render: shell

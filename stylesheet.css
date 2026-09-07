@@ -1,0 +1,42 @@
+.codex-local-panel {
+  spacing: 6px;
+}
+
+.codex-local-icon {
+  width: 16px;
+  height: 16px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  margin: 0 2px 0 0;
+}
+
+.codex-local-window {
+  font-feature-settings: "tnum";
+  font-weight: 600;
+}
+
+.codex-local-separator,
+.codex-local-muted {
+  color: rgba(205, 214, 244, 0.55);
+}
+
+.codex-local-good {
+  color: #57e389;
+}
+
+.codex-local-warning {
+  color: #f8e45c;
+}
+
+.codex-local-critical {
+  color: #ff7b63;
+}
+
+.codex-local-unknown {
+  color: rgba(205, 214, 244, 0.70);
+}
+
+.codex-local-menu-title {
+  font-weight: 700;
+}

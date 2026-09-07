@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <enum id="org.gnome.shell.extensions.codex-local-status-bar.PanelPosition">
+    <value nick="left" value="0"/>
+    <value nick="right" value="1"/>
+  </enum>
+
+  <enum id="org.gnome.shell.extensions.codex-local-status-bar.RefreshInterval">
+    <value nick="fifteen-seconds" value="15"/>
+    <value nick="thirty-seconds" value="30"/>
+    <value nick="one-minute" value="60"/>
+    <value nick="two-minutes" value="120"/>
+  </enum>
+
+  <enum id="org.gnome.shell.extensions.codex-local-status-bar.FontSize">
+    <value nick="twelve" value="12"/>
+    <value nick="thirteen" value="13"/>
+    <value nick="fourteen" value="14"/>
+    <value nick="fifteen" value="15"/>
+    <value nick="sixteen" value="16"/>
+  </enum>
+
+  <schema id="org.gnome.shell.extensions.codex-local-status-bar"
+          path="/org/gnome/shell/extensions/codex-local-status-bar/">
+    <key name="panel-position" enum="org.gnome.shell.extensions.codex-local-status-bar.PanelPosition">
+      <default>'right'</default>
+      <summary>Top-bar position</summary>
+      <description>Whether the indicator is placed in the left or right GNOME panel box.</description>
+    </key>
+
+    <key name="refresh-interval" enum="org.gnome.shell.extensions.codex-local-status-bar.RefreshInterval">
+      <default>'thirty-seconds'</default>
+      <summary>Local refresh interval</summary>
+      <description>How often the extension rescans local Codex session JSONL files.</description>
+    </key>
+
+    <key name="font-size" enum="org.gnome.shell.extensions.codex-local-status-bar.FontSize">
+      <default>'fourteen'</default>
+      <summary>Top-bar font size</summary>
+      <description>Font size in pixels for the quota text shown in the GNOME top bar.</description>
+    </key>
+  </schema>
+</schemalist>
