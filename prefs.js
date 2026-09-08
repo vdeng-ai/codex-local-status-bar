@@ -6,8 +6,8 @@ import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/ex
 const PANEL_POSITION_LABELS = ['Left', 'Right'];
 const REFRESH_INTERVALS = [15, 30, 60, 120];
 const REFRESH_INTERVAL_LABELS = ['15 seconds', '30 seconds', '60 seconds', '120 seconds'];
-const FONT_SIZES = [12, 13, 14, 15, 16];
-const FONT_SIZE_LABELS = ['12 px', '13 px', '14 px', '15 px', '16 px'];
+const FONT_SIZES = [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+const FONT_SIZE_LABELS = FONT_SIZES.map(size => `${size} px`);
 
 export default class CodexLocalStatusBarPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {

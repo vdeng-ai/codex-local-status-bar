@@ -18,7 +18,7 @@
 - 不请求 OpenAI、ChatGPT 或第三方接口
 - 使用异步 Gio 文件 I/O，避免阻塞 GNOME Shell
 - 顶栏位置可选 **Left / Right**
-- 字号可选 **12–16 px**
+- 字号可选 **12–22 px**
 - 本地刷新间隔可选 **15 / 30 / 60 / 120 秒**
 - 支持手动刷新
 - GNOME 原生 Preferences 设置界面
@@ -132,6 +132,7 @@ codex-local-status-bar@vdeng-ai.github.io
 ```bash
 npm test
 npm run check
+npm run smoke:reader
 npm run smoke:gnome
 ```
 

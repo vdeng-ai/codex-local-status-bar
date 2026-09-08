@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here.
 
+## v0.2.2 — 2026-09-08
+
+### Fixed
+
+- stop reading recent session files as soon as both Codex quota windows are found, avoiding unnecessary cold-start parsing of hundreds of megabytes of JSONL data
+- substantially reduce first-refresh latency and peak memory on large Codex histories
+
+### Changed
+
+- extend configurable top-bar font size from 12–16 px to 12–22 px
+
 ## v0.2.1 — 2026-09-07
 
 First public-release candidate.

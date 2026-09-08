@@ -43,7 +43,7 @@ The parser extracts only:
 
 ## Polling behavior
 
-The extension scans local filesystem metadata at a user-selectable interval of 15, 30, 60, or 120 seconds (default: 30 seconds). It uses asynchronous Gio enumeration/read operations, keeps only the 20 most recently modified JSONL files in the active parse set, and caches each file by modification time plus size so unchanged files are not reparsed.
+The extension scans local filesystem metadata at a user-selectable interval of 15, 30, 60, or 120 seconds (default: 30 seconds). It uses asynchronous Gio enumeration/read operations, considers at most the 20 most recently modified JSONL files, and stops reading as soon as both the 5-hour and weekly snapshots are found. Parsed files are cached by modification time plus size so unchanged files are not reparsed.
 
 Changing the refresh interval only restarts the local GLib timer. A new refresh is queued rather than overlapping an in-flight async scan. There is no network polling.
 

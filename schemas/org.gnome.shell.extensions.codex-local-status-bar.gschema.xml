@@ -18,6 +18,12 @@
     <value nick="fourteen" value="14"/>
     <value nick="fifteen" value="15"/>
     <value nick="sixteen" value="16"/>
+    <value nick="seventeen" value="17"/>
+    <value nick="eighteen" value="18"/>
+    <value nick="nineteen" value="19"/>
+    <value nick="twenty" value="20"/>
+    <value nick="twenty-one" value="21"/>
+    <value nick="twenty-two" value="22"/>
   </enum>
 
   <schema id="org.gnome.shell.extensions.codex-local-status-bar"

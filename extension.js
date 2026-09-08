@@ -13,7 +13,7 @@ import {SessionUsageReader} from './lib/session-reader.js';
 const DEFAULT_REFRESH_SECONDS = 30;
 const DEFAULT_FONT_SIZE = 14;
 const REFRESH_INTERVALS = new Set([15, 30, 60, 120]);
-const FONT_SIZES = new Set([12, 13, 14, 15, 16]);
+const FONT_SIZES = new Set([12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]);
 const PANEL_BOXES = ['left', 'right'];
 const LEVEL_CLASSES = [
   'codex-local-good',

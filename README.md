@@ -26,7 +26,7 @@ Codex Local Status Bar is designed for people who use the Codex CLI or Codex des
 - Does **not** call OpenAI, ChatGPT, or any third-party endpoint
 - Async Gio file scanning to keep GNOME Shell responsive
 - Configurable **Left / Right** panel position
-- Configurable **12–16 px** quota font size
+- Configurable **12–22 px** quota font size
 - Configurable **15 / 30 / 60 / 120 second** local refresh interval
 - Manual **Refresh local files** action
 - Native GNOME/Adwaita preferences window
@@ -93,7 +93,7 @@ Click the indicator to see:
 Settings are applied live:
 
 - **Panel position:** Left / Right
-- **Font size:** 12 / 13 / 14 / 15 / 16 px
+- **Font size:** 12–22 px
 - **Refresh interval:** 15 / 30 / 60 / 120 seconds
 
 Default values are Right, 14 px, and 30 seconds.
@@ -191,11 +191,12 @@ The package is written to `dist/`.
 
 ## Development and testing
 
-Parser, privacy, and GNOME Shell I/O invariants:
+Parser, privacy, GNOME Shell I/O invariants, and the async reader fixture:
 
 ```bash
 npm test
 npm run check
+npm run smoke:reader
 ```
 
 Before installing UI changes into your real desktop, run the isolated nested-Shell smoke test:

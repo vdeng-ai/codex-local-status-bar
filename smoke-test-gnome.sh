@@ -77,7 +77,7 @@ dbus-run-session bash -lc '
   sleep 1
   gsettings set "$SCHEMA_ID" panel-position "'\''right'\''"
   gsettings set "$SCHEMA_ID" refresh-interval "'\''two-minutes'\''"
-  gsettings set "$SCHEMA_ID" font-size "'\''sixteen'\''"
+  gsettings set "$SCHEMA_ID" font-size "'\''twenty-two'\''"
   sleep 1
 
   INFO_AFTER="$(gnome-extensions info "$UUID" 2>/dev/null || true)"

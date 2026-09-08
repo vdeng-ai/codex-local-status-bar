@@ -29,6 +29,7 @@ Run all lightweight checks before submitting a PR:
 ```bash
 npm test
 npm run check
+npm run smoke:reader
 ```
 
 For UI/runtime changes, also run the isolated nested GNOME Shell smoke test:
