@@ -16,6 +16,8 @@
 
 Codex Local Status Bar is designed for people who use the Codex CLI or Codex desktop tooling on GNOME and want a small, always-visible quota indicator without another account integration or background API client.
 
+It tracks only the normal Codex quota pool (`limit_id: codex`). Separate Luna Reserve allowance records (`base_model_inference` / `gpt-reserve`) are intentionally ignored so they cannot overwrite the normal 5-hour or weekly Codex values.
+
 ## Highlights
 
 - **5-hour + weekly quota** in the GNOME top bar

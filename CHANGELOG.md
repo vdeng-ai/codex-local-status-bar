@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here.
 
+## v0.2.3 — 2026-09-09
+
+### Fixed
+
+- ignore Luna Reserve allowance records (`base_model_inference` / `gpt-reserve`) when calculating the normal Codex 5-hour and weekly quota
+- report the timestamp of the latest normal Codex quota snapshot instead of the latest unrelated reserve allowance event
+- stop displaying stale quota percentages after their reset timestamp has already passed
+
 ## v0.2.2 — 2026-09-08
 
 ### Fixed

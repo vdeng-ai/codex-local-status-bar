@@ -9,6 +9,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import {SessionUsageReader} from './lib/session-reader.js';
+import {isLimitExpired} from './lib/rate-limits.js';
 
 const DEFAULT_REFRESH_SECONDS = 30;
 const DEFAULT_FONT_SIZE = 14;
@@ -86,6 +87,8 @@ function formatFreshness(ms) {
 function popupWindowText(name, limit) {
   if (!limit)
     return `${name}: unavailable`;
+  if (isLimitExpired(limit))
+    return `${name}: reset passed · waiting for next Codex snapshot`;
   return `${name}: ${percentText(limit)} left · ${formatReset(limit.resetsAtMs)}`;
 }
 
@@ -328,14 +331,17 @@ export default class CodexLocalStatusBarExtension extends Extension {
           cancellable.is_cancelled() || !this._indicator)
         return;
 
-      this._fiveLabel.text = `5h ${percentText(usage.fiveHour)}`;
-      this._weeklyLabel.text = `7d ${percentText(usage.weekly)}`;
-      applyLevelClass(this._fiveLabel, usage.fiveHour);
-      applyLevelClass(this._weeklyLabel, usage.weekly);
+      const fiveHour = isLimitExpired(usage.fiveHour) ? null : usage.fiveHour;
+      const weekly = isLimitExpired(usage.weekly) ? null : usage.weekly;
+
+      this._fiveLabel.text = `5h ${percentText(fiveHour)}`;
+      this._weeklyLabel.text = `7d ${percentText(weekly)}`;
+      applyLevelClass(this._fiveLabel, fiveHour);
+      applyLevelClass(this._weeklyLabel, weekly);
 
       this._fiveItem.label.text = popupWindowText('5-hour', usage.fiveHour);
       this._weeklyItem.label.text = popupWindowText('Weekly', usage.weekly);
-      this._freshnessItem.label.text = formatFreshness(usage.observedAtMs);
+      this._freshnessItem.label.text = formatFreshness(usage.observedAtMs).replace('Latest Codex update', 'Latest Codex quota update');
       this._sourceItem.label.text = `Source: ${usage.sessionsPath} · ${usage.scannedFiles} recent files · ${this._refreshSeconds()}s`;
     } catch (error) {
       if (cancellable.is_cancelled() || reader !== this._reader)

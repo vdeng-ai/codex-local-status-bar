@@ -4,16 +4,28 @@ import test from 'node:test';
 import {
   classifyWindow,
   extractRateLimitSnapshot,
+  isLimitExpired,
   parseRateLimitText,
 } from '../lib/rate-limits.js';
 
-function event({timestamp = '2026-09-07T07:42:20.700Z', primary = null, secondary = null} = {}) {
+function event({
+  timestamp = '2026-09-07T07:42:20.700Z',
+  limitId = 'codex',
+  limitName = null,
+  primary = null,
+  secondary = null,
+} = {}) {
   return {
     timestamp,
     type: 'event_msg',
     payload: {
       type: 'token_count',
-      rate_limits: {primary, secondary},
+      rate_limits: {
+        limit_id: limitId,
+        limit_name: limitName,
+        primary,
+        secondary,
+      },
     },
   };
 }
@@ -77,6 +89,36 @@ test('keeps the newest value for each window independently', () => {
   assert.equal(snapshot.weekly.remainingPercent, 50);
   assert.equal(snapshot.fiveHour.observedAtMs, Date.parse('2026-09-07T07:10:00.000Z'));
   assert.equal(snapshot.weekly.observedAtMs, Date.parse('2026-09-07T07:00:00.000Z'));
+});
+
+test('ignores Luna Reserve / gpt-reserve allowance records', () => {
+  const text = [
+    JSON.stringify(event({
+      timestamp: '2026-09-08T07:07:37.789Z',
+      primary: {used_percent: 100, window_minutes: 300, resets_at: 1788865260},
+      secondary: {used_percent: 16, window_minutes: 10080, resets_at: 1789452060},
+    })),
+    JSON.stringify(event({
+      timestamp: '2026-09-09T01:14:48.672Z',
+      limitId: 'base_model_inference',
+      limitName: 'gpt-reserve',
+      primary: {used_percent: 0, window_minutes: 10080, resets_at: 1789521234},
+    })),
+  ].join('\n');
+
+  const snapshot = parseRateLimitText(text);
+  assert.equal(snapshot.fiveHour.remainingPercent, 0);
+  assert.equal(snapshot.weekly.remainingPercent, 84);
+  assert.equal(snapshot.observedAtMs, Date.parse('2026-09-08T07:07:37.789Z'));
+});
+
+test('marks a quota window stale after its reset timestamp passes', () => {
+  const snapshot = extractRateLimitSnapshot(event({
+    primary: {used_percent: 100, window_minutes: 300, resets_at: 1788865260},
+  }));
+
+  assert.equal(isLimitExpired(snapshot.fiveHour, 1788865259000), false);
+  assert.equal(isLimitExpired(snapshot.fiveHour, 1788865260000), true);
 });
 
 test('ignores malformed JSONL tails and unrelated events', () => {

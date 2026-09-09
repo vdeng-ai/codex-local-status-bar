@@ -32,7 +32,7 @@ Codex 自己会把 rate-limit snapshot 写进：
 ~/.codex/sessions/**/*.jsonl
 ```
 
-本扩展只读取这些本地记录：
+本扩展只读取这些本地记录。它只把正常 Codex 配额池（`limit_id: codex`）当作 5h / weekly 数据；Luna Reserve 的 `base_model_inference / gpt-reserve` 会被忽略，不会覆盖正常 Codex 配额。
 
 ```text
 Codex session JSONL
