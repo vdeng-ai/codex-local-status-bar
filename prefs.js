@@ -6,8 +6,8 @@ import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/ex
 const PANEL_POSITION_LABELS = ['Left', 'Right'];
 const REFRESH_INTERVALS = [15, 30, 60, 120];
 const REFRESH_INTERVAL_LABELS = ['15 seconds', '30 seconds', '60 seconds', '120 seconds'];
-const FONT_SIZES = [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
-const FONT_SIZE_LABELS = FONT_SIZES.map(size => `${size} px`);
+const MIN_FONT_SIZE = 12;
+const MAX_FONT_SIZE = 32;
 
 export default class CodexLocalStatusBarPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {
@@ -37,17 +37,24 @@ export default class CodexLocalStatusBarPreferences extends ExtensionPreferences
     });
 
     const currentFontSize = this._settings.get_enum('font-size');
-    const currentFontIndex = Math.max(0, FONT_SIZES.indexOf(currentFontSize));
-    const fontSizeRow = new Adw.ComboRow({
+    const fontSizeAdjustment = new Gtk.Adjustment({
+      lower: MIN_FONT_SIZE,
+      upper: MAX_FONT_SIZE,
+      step_increment: 1,
+      page_increment: 2,
+      value: currentFontSize,
+    });
+    const fontSizeRow = new Adw.SpinRow({
       title: 'Font size',
-      subtitle: '14 px matches the normal GNOME top-bar scale well.',
-      model: Gtk.StringList.new(FONT_SIZE_LABELS),
-      selected: currentFontIndex,
+      subtitle: 'Top-bar quota text size in pixels.',
+      adjustment: fontSizeAdjustment,
+      digits: 0,
+      numeric: true,
+      snap_to_ticks: true,
     });
 
-    fontSizeRow.connect('notify::selected', row => {
-      const fontSize = FONT_SIZES[row.selected] ?? 14;
-      this._settings.set_enum('font-size', fontSize);
+    fontSizeRow.connect('notify::value', row => {
+      this._settings.set_enum('font-size', Math.round(row.value));
     });
 
     appearanceGroup.add(positionRow);
@@ -56,7 +63,7 @@ export default class CodexLocalStatusBarPreferences extends ExtensionPreferences
 
     const updateGroup = new Adw.PreferencesGroup({
       title: 'Local refresh',
-      description: 'Controls how often ~/.codex/sessions JSONL files are rescanned.',
+      description: 'Controls how often local Codex quota sources are refreshed.',
     });
 
     const currentInterval = this._settings.get_enum('refresh-interval');

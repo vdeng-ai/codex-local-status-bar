@@ -22,7 +22,7 @@ done
 
 mkdir -p "$DEST/lib" "$DEST/icons" "$DEST/schemas" "$TMP/config/glib-2.0/settings"
 cp "$ROOT/metadata.json" "$ROOT/extension.js" "$ROOT/prefs.js" "$ROOT/stylesheet.css" "$DEST/"
-cp "$ROOT/lib/rate-limits.js" "$ROOT/lib/session-reader.js" "$DEST/lib/"
+cp "$ROOT/lib/rate-limits.js" "$ROOT/lib/session-reader.js" "$ROOT/lib/log-reader.js" "$ROOT/lib/usage-reader.js" "$DEST/lib/"
 cp "$ROOT/icons/codex.svg" "$DEST/icons/"
 cp "$ROOT/schemas/org.gnome.shell.extensions.codex-local-status-bar.gschema.xml" "$DEST/schemas/"
 glib-compile-schemas "$DEST/schemas"
@@ -77,7 +77,7 @@ dbus-run-session bash -lc '
   sleep 1
   gsettings set "$SCHEMA_ID" panel-position "'\''right'\''"
   gsettings set "$SCHEMA_ID" refresh-interval "'\''two-minutes'\''"
-  gsettings set "$SCHEMA_ID" font-size "'\''twenty-two'\''"
+  gsettings set "$SCHEMA_ID" font-size "'\''thirty-two'\''"
   sleep 1
 
   INFO_AFTER="$(gnome-extensions info "$UUID" 2>/dev/null || true)"

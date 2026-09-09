@@ -32,6 +32,8 @@ cp "$ROOT/prefs.js" "$DEST/"
 cp "$ROOT/stylesheet.css" "$DEST/"
 cp "$ROOT/lib/rate-limits.js" "$DEST/lib/"
 cp "$ROOT/lib/session-reader.js" "$DEST/lib/"
+cp "$ROOT/lib/log-reader.js" "$DEST/lib/"
+cp "$ROOT/lib/usage-reader.js" "$DEST/lib/"
 cp "$ROOT/icons/codex.svg" "$DEST/icons/"
 cp "$ROOT/schemas/org.gnome.shell.extensions.codex-local-status-bar.gschema.xml" "$DEST/schemas/"
 

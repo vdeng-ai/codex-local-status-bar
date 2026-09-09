@@ -1,11 +1,11 @@
 {
   "name": "codex-local-status-bar",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "check": "node --check extension.js && node --check prefs.js && node --check lib/rate-limits.js && node --check lib/session-reader.js && glib-compile-schemas --strict --dry-run schemas",
+    "check": "node --check extension.js && node --check prefs.js && node --check lib/rate-limits.js && node --check lib/session-reader.js && node --check lib/log-reader.js && node --check lib/usage-reader.js && glib-compile-schemas --strict --dry-run schemas",
     "smoke:gnome": "bash ./smoke-test-gnome.sh",
     "smoke:reader": "bash ./smoke-test-reader.sh"
   }

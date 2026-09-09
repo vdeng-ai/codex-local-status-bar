@@ -5,6 +5,8 @@ import test from 'node:test';
 const SHELL_IO_FILES = [
   'extension.js',
   'lib/session-reader.js',
+  'lib/log-reader.js',
+  'lib/usage-reader.js',
 ];
 
 const FORBIDDEN_SYNC_FILE_CALLS = [

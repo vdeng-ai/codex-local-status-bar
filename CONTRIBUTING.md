@@ -9,7 +9,7 @@ Please include:
 - GNOME Shell version (`gnome-shell --version`)
 - distribution/version
 - extension version or Git commit
-- whether `~/.codex/sessions` contains recent `*.jsonl` files
+- whether `~/.codex/logs_*.sqlite` or `~/.codex/sessions` contains recent local Codex data
 - relevant GNOME Shell log lines
 
 Useful diagnostics:
@@ -48,9 +48,11 @@ State: ACTIVE
 
 Changes to runtime code must preserve these project constraints:
 
-- session data comes from local Codex JSONL files
-- no `auth.json` reads
+- quota data comes only from Codex data already persisted locally (`logs_*.sqlite` plus session JSONL fallback)
+- local SQLite access stays read-only and quota-field-only
+- no `auth.json`, browser cookie, or browser Local Storage reads
 - no OAuth/token handling
+- no `codex app-server` quota/account RPC
 - no OpenAI or third-party backend polling
 - no telemetry
 - no synchronous file I/O on the GNOME Shell main thread

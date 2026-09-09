@@ -8,13 +8,12 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-import {SessionUsageReader} from './lib/session-reader.js';
+import {LocalUsageReader} from './lib/usage-reader.js';
 import {isLimitExpired} from './lib/rate-limits.js';
 
 const DEFAULT_REFRESH_SECONDS = 30;
 const DEFAULT_FONT_SIZE = 14;
 const REFRESH_INTERVALS = new Set([15, 30, 60, 120]);
-const FONT_SIZES = new Set([12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]);
 const PANEL_BOXES = ['left', 'right'];
 const LEVEL_CLASSES = [
   'codex-local-good',
@@ -68,28 +67,55 @@ function formatReset(ms) {
   return `resets ${reset.format('%b %e %H:%M')}`;
 }
 
-function formatFreshness(ms) {
+function formatFreshness(ms, prefix = 'Latest local quota update') {
   if (!Number.isFinite(ms))
-    return 'No Codex rate-limit event found yet';
+    return `${prefix}: unavailable`;
 
   const ageSeconds = Math.max(0, Math.floor((Date.now() - ms) / 1000));
   if (ageSeconds < 60)
-    return `Latest Codex update: ${ageSeconds}s ago`;
+    return `${prefix}: ${ageSeconds}s ago`;
   if (ageSeconds < 3600)
-    return `Latest Codex update: ${Math.floor(ageSeconds / 60)}m ago`;
+    return `${prefix}: ${Math.floor(ageSeconds / 60)}m ago`;
   if (ageSeconds < 86400)
-    return `Latest Codex update: ${Math.floor(ageSeconds / 3600)}h ago`;
+    return `${prefix}: ${Math.floor(ageSeconds / 3600)}h ago`;
 
   const date = localDateTime(ms);
-  return date ? `Latest Codex update: ${date.format('%b %e %H:%M')}` : 'Latest Codex update: unknown';
+  return date ? `${prefix}: ${date.format('%b %e %H:%M')}` : `${prefix}: unknown`;
 }
 
-function popupWindowText(name, limit) {
+function windowText(limit) {
+  if (!limit)
+    return '--';
+  if (limit.kind === 'fiveHour')
+    return '5h';
+  if (limit.kind === 'weekly')
+    return '7d';
+
+  const minutes = Number(limit.windowMinutes);
+  if (!Number.isFinite(minutes) || minutes <= 0)
+    return '?';
+  if (minutes % 1440 === 0)
+    return `${minutes / 1440}d`;
+  if (minutes % 60 === 0)
+    return `${minutes / 60}h`;
+  return `${minutes}m`;
+}
+
+function popupWindowText(limit) {
+  const name = windowText(limit);
   if (!limit)
     return `${name}: unavailable`;
   if (isLimitExpired(limit))
-    return `${name}: reset passed · waiting for next Codex snapshot`;
+    return `${name}: reset passed · waiting for a newer local snapshot`;
   return `${name}: ${percentText(limit)} left · ${formatReset(limit.resetsAtMs)}`;
+}
+
+function panelPoolName(pool) {
+  if (pool.id === 'codex')
+    return null;
+  if (pool.name === 'GPT Reserve')
+    return 'Reserve';
+  return pool.name;
 }
 
 function iconStyleForFile(extensionPath, iconBasename) {
@@ -98,7 +124,7 @@ function iconStyleForFile(extensionPath, iconBasename) {
 
 export default class CodexLocalStatusBarExtension extends Extension {
   enable() {
-    this._reader = new SessionUsageReader();
+    this._reader = new LocalUsageReader();
     this._settings = this.getSettings();
     this._cancellable = new Gio.Cancellable();
     this._timerId = 0;
@@ -144,66 +170,38 @@ export default class CodexLocalStatusBarExtension extends Extension {
       y_align: Clutter.ActorAlign.CENTER,
     });
 
-    // Match the reference extension's approach: a plain St.Widget with a CSS
-    // background image preserves the SVG's embedded brand color. St.Icon may
-    // recolor file icons through GNOME's symbolic-icon panel styling.
     const icon = new St.Widget({
       style_class: 'codex-local-icon',
       style: iconStyleForFile(this.path, 'codex.svg'),
       y_align: Clutter.ActorAlign.CENTER,
     });
 
-    this._fiveLabel = new St.Label({
-      text: '5h --',
+    this._usageBox = new St.BoxLayout({
+      style_class: 'codex-local-usage-box',
       y_align: Clutter.ActorAlign.CENTER,
-      style_class: 'codex-local-window codex-local-unknown',
-    });
-
-    this._separatorLabel = new St.Label({
-      text: '/',
-      y_align: Clutter.ActorAlign.CENTER,
-      style_class: 'codex-local-separator',
-    });
-
-    this._weeklyLabel = new St.Label({
-      text: '7d --',
-      y_align: Clutter.ActorAlign.CENTER,
-      style_class: 'codex-local-window codex-local-unknown',
     });
 
     box.add_child(icon);
-    box.add_child(this._fiveLabel);
-    box.add_child(this._separatorLabel);
-    box.add_child(this._weeklyLabel);
+    box.add_child(this._usageBox);
     this._indicator.add_child(box);
-    this._applyFontSize();
 
     const titleItem = new PopupMenu.PopupMenuItem(
-      'Codex usage · local session data',
+      'Codex usage · local data',
       {reactive: false}
     );
     titleItem.label.add_style_class_name('codex-local-menu-title');
     this._indicator.menu.addMenuItem(titleItem);
 
-    this._fiveItem = new PopupMenu.PopupMenuItem(
-      '5-hour: unavailable',
-      {reactive: false}
-    );
-    this._weeklyItem = new PopupMenu.PopupMenuItem(
-      'Weekly: unavailable',
-      {reactive: false}
-    );
-    this._indicator.menu.addMenuItem(this._fiveItem);
-    this._indicator.menu.addMenuItem(this._weeklyItem);
-
+    this._poolSection = new PopupMenu.PopupMenuSection();
+    this._indicator.menu.addMenuItem(this._poolSection);
     this._indicator.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
     this._freshnessItem = new PopupMenu.PopupMenuItem(
-      'No Codex rate-limit event found yet',
+      'Latest local quota update: unavailable',
       {reactive: false}
     );
     this._sourceItem = new PopupMenu.PopupMenuItem(
-      'Source: ~/.codex/sessions',
+      'Source: local Codex data',
       {reactive: false}
     );
     this._sourceItem.label.add_style_class_name('codex-local-muted');
@@ -211,7 +209,7 @@ export default class CodexLocalStatusBarExtension extends Extension {
     this._indicator.menu.addMenuItem(this._sourceItem);
 
     this._indicator.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-    this._indicator.menu.addAction('Refresh local files', () => this._requestRefresh(true));
+    this._indicator.menu.addAction('Refresh local data', () => this._requestRefresh(true));
     this._indicator.menu.addAction('Settings…', () => this.openPreferences());
 
     Main.panel.addToStatusArea(
@@ -220,6 +218,8 @@ export default class CodexLocalStatusBarExtension extends Extension {
       1,
       this._panelBox()
     );
+
+    this._renderPools(null);
   }
 
   _destroyIndicator() {
@@ -232,11 +232,8 @@ export default class CodexLocalStatusBarExtension extends Extension {
       Main.panel.statusArea[this.uuid] = null;
 
     this._indicator = null;
-    this._fiveLabel = null;
-    this._weeklyLabel = null;
-    this._separatorLabel = null;
-    this._fiveItem = null;
-    this._weeklyItem = null;
+    this._usageBox = null;
+    this._poolSection = null;
     this._freshnessItem = null;
     this._sourceItem = null;
   }
@@ -262,14 +259,104 @@ export default class CodexLocalStatusBarExtension extends Extension {
 
   _fontSize() {
     const selected = this._settings?.get_enum('font-size') ?? DEFAULT_FONT_SIZE;
-    return FONT_SIZES.has(selected) ? selected : DEFAULT_FONT_SIZE;
+    return selected >= 12 && selected <= 32 ? selected : DEFAULT_FONT_SIZE;
   }
 
   _applyFontSize() {
     const style = `font-size: ${this._fontSize()}px;`;
-    this._fiveLabel?.set_style(style);
-    this._separatorLabel?.set_style(style);
-    this._weeklyLabel?.set_style(style);
+    for (const child of this._usageBox?.get_children() ?? [])
+      child.set_style?.(style);
+  }
+
+  _makePanelLabel(text, styleClass, limit = null) {
+    const label = new St.Label({
+      text,
+      y_align: Clutter.ActorAlign.CENTER,
+      style_class: styleClass,
+    });
+    label.set_style(`font-size: ${this._fontSize()}px;`);
+    if (limit !== null)
+      applyLevelClass(label, limit);
+    return label;
+  }
+
+  _renderPools(usage) {
+    if (!this._usageBox || !this._poolSection)
+      return;
+
+    for (const child of this._usageBox.get_children())
+      child.destroy();
+    this._poolSection.removeAll();
+
+    const pools = usage?.pools ?? [];
+    if (pools.length === 0) {
+      const placeholder = this._makePanelLabel(
+        '5h -- / 7d --',
+        'codex-local-window codex-local-unknown'
+      );
+      this._usageBox.add_child(placeholder);
+      this._poolSection.addMenuItem(new PopupMenu.PopupMenuItem(
+        'No local quota snapshot found yet',
+        {reactive: false}
+      ));
+      return;
+    }
+
+    pools.forEach((pool, poolIndex) => {
+      if (poolIndex > 0) {
+        this._usageBox.add_child(this._makePanelLabel(
+          '|',
+          'codex-local-pool-divider'
+        ));
+      }
+
+      const poolName = panelPoolName(pool);
+      if (poolName) {
+        this._usageBox.add_child(this._makePanelLabel(
+          poolName,
+          'codex-local-pool-name'
+        ));
+      }
+
+      const windows = pool.windows ?? [];
+      windows.forEach((limit, windowIndex) => {
+        if (windowIndex > 0) {
+          this._usageBox.add_child(this._makePanelLabel(
+            '/',
+            'codex-local-separator'
+          ));
+        }
+
+        const visibleLimit = isLimitExpired(limit) ? null : limit;
+        const label = this._makePanelLabel(
+          `${windowText(limit)} ${percentText(visibleLimit)}`,
+          'codex-local-window codex-local-unknown',
+          visibleLimit
+        );
+        this._usageBox.add_child(label);
+      });
+
+      const poolTitle = new PopupMenu.PopupMenuItem(pool.name, {reactive: false});
+      poolTitle.label.add_style_class_name('codex-local-pool-title');
+      this._poolSection.addMenuItem(poolTitle);
+
+      for (const limit of windows) {
+        this._poolSection.addMenuItem(new PopupMenu.PopupMenuItem(
+          popupWindowText(limit),
+          {reactive: false}
+        ));
+      }
+
+      const poolFreshness = new PopupMenu.PopupMenuItem(
+        formatFreshness(pool.observedAtMs, 'Updated'),
+        {reactive: false}
+      );
+      poolFreshness.label.add_style_class_name('codex-local-muted');
+      this._poolSection.addMenuItem(poolFreshness);
+
+      if (poolIndex < pools.length - 1)
+        this._poolSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+    });
   }
 
   _startTimer() {
@@ -331,31 +418,24 @@ export default class CodexLocalStatusBarExtension extends Extension {
           cancellable.is_cancelled() || !this._indicator)
         return;
 
-      const fiveHour = isLimitExpired(usage.fiveHour) ? null : usage.fiveHour;
-      const weekly = isLimitExpired(usage.weekly) ? null : usage.weekly;
+      this._renderPools(usage);
+      this._freshnessItem.label.text = formatFreshness(usage.observedAtMs);
 
-      this._fiveLabel.text = `5h ${percentText(fiveHour)}`;
-      this._weeklyLabel.text = `7d ${percentText(weekly)}`;
-      applyLevelClass(this._fiveLabel, fiveHour);
-      applyLevelClass(this._weeklyLabel, weekly);
-
-      this._fiveItem.label.text = popupWindowText('5-hour', usage.fiveHour);
-      this._weeklyItem.label.text = popupWindowText('Weekly', usage.weekly);
-      this._freshnessItem.label.text = formatFreshness(usage.observedAtMs).replace('Latest Codex update', 'Latest Codex quota update');
-      this._sourceItem.label.text = `Source: ${usage.sessionsPath} · ${usage.scannedFiles} recent files · ${this._refreshSeconds()}s`;
+      if (usage.sourceKind === 'local-response-log') {
+        this._sourceItem.label.text = `Source: Codex local response log · session fallback · ${this._refreshSeconds()}s`;
+      } else {
+        this._sourceItem.label.text = `Source: Codex session JSONL · ${usage.scannedFiles} file(s) · ${this._refreshSeconds()}s`;
+      }
     } catch (error) {
       if (cancellable.is_cancelled() || reader !== this._reader)
         return;
 
-      console.error(`Codex Local Status Bar could not read local sessions: ${error.stack ?? error.message}`);
+      console.error(`Codex Local Status Bar could not read local quota data: ${error.stack ?? error.message}`);
       if (!this._indicator)
         return;
 
-      this._fiveLabel.text = '5h --';
-      this._weeklyLabel.text = '7d --';
-      applyLevelClass(this._fiveLabel, null);
-      applyLevelClass(this._weeklyLabel, null);
-      this._freshnessItem.label.text = 'Local session read failed; see GNOME Shell logs';
+      this._renderPools(null);
+      this._freshnessItem.label.text = 'Local quota read failed; see GNOME Shell logs';
     } finally {
       if (reader !== this._reader)
         return;

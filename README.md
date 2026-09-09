@@ -1,6 +1,6 @@
 # Codex Local Status Bar
 
-> A lightweight GNOME Shell extension that shows your Codex **5-hour** and **weekly** quota directly in the top bar — using only local Codex session data.
+> A lightweight GNOME Shell extension that shows Codex quota pools directly in the top bar — using only data that Codex has already written locally.
 
 [简体中文](README.zh-CN.md)
 
@@ -11,65 +11,60 @@
 [![GitHub Release](https://img.shields.io/github/v/release/vdeng-ai/codex-local-status-bar?display_name=tag)](https://github.com/vdeng-ai/codex-local-status-bar/releases)
 
 ```text
-[Codex icon]  5h 83% / 7d 62%
+[Codex icon]  5h 88% / 7d 83% | Reserve 7d 100%
 ```
 
 Codex Local Status Bar is designed for people who use the Codex CLI or Codex desktop tooling on GNOME and want a small, always-visible quota indicator without another account integration or background API client.
 
-It tracks only the normal Codex quota pool (`limit_id: codex`). Separate Luna Reserve allowance records (`base_model_inference` / `gpt-reserve`) are intentionally ignored so they cannot overwrite the normal 5-hour or weekly Codex values.
+It keeps independent allowance pools separate. The normal Codex pool and GPT/Luna Reserve (`base_model_inference` / `gpt-reserve`) can be displayed side by side instead of overwriting one another.
 
 ## Highlights
 
-- **5-hour + weekly quota** in the GNOME top bar
-- Shows **remaining percentage**, reset time, and freshness of the latest local snapshot
-- Reads only `~/.codex/sessions/**/*.jsonl` (or `$CODEX_HOME/sessions`)
+- **Multiple independent quota pools** in the GNOME top bar
+- Shows **remaining percentage**, reset time, and freshness of each local snapshot
+- Prefers Codex response headers already recorded in `~/.codex/logs_*.sqlite`
+- Falls back to `~/.codex/sessions/**/*.jsonl` (or `$CODEX_HOME/sessions`)
 - Does **not** read `~/.codex/auth.json`
 - Does **not** handle access tokens, refresh tokens, cookies, or API keys
 - Does **not** call OpenAI, ChatGPT, or any third-party endpoint
 - Async Gio file scanning to keep GNOME Shell responsive
 - Configurable **Left / Right** panel position
-- Configurable **12–22 px** quota font size
+- Configurable **12–32 px** quota font size with a numeric stepper
 - Configurable **15 / 30 / 60 / 120 second** local refresh interval
-- Manual **Refresh local files** action
+- Manual **Refresh local data** action
 - Native GNOME/Adwaita preferences window
-- No telemetry, analytics, daemon, Node runtime, or external dependency at runtime
+- No telemetry, analytics, daemon, or Node runtime; `sqlite3` is optional and used read-only for the freshest local response-log data
 
-## Why local session data?
+## Why local Codex data?
 
-Codex already writes rate-limit snapshots into its local session JSONL files. This extension simply displays the newest snapshots that Codex has already written.
+Recent Codex builds expose the freshest quota information in response headers that are also written into Codex's local `logs_*.sqlite` database. Older/session-level snapshots are still available in JSONL transcripts. The extension uses both without creating its own network request.
 
 ```text
-~/.codex/sessions/**/*.jsonl
-          │
-          ▼
-  local async reader
-          │
-          ▼
- rate-limit parser
-          │
-          ▼
-   GNOME top bar
+~/.codex/logs_*.sqlite ── read-only sqlite3 ──┐
+                                             ├─ quota-pool parser ── GNOME top bar
+~/.codex/sessions/**/*.jsonl ─ async fallback ┘
 ```
 
 That means the extension does not need to reuse your Codex login session, refresh OAuth tokens, or poll a private backend endpoint.
 
 | Approach | Codex Local Status Bar |
 | --- | --- |
-| Reads local session snapshots | ✅ |
+| Reads local response-log headers | ✅ |
+| Reads local session snapshots | ✅ fallback |
 | Reads `auth.json` | ❌ |
 | OAuth/token refresh | ❌ |
 | OpenAI backend polling | ❌ |
 | Third-party server | ❌ |
 | Telemetry | ❌ |
 
-Because the source is local, the value changes only after Codex itself writes a newer rate-limit snapshot. If Codex is idle, the last known value remains visible and the popup shows how old it is.
+Because every source is local, values change only after Codex itself persists newer quota information. The local response log is usually fresher than session JSONL, but the Codex App UI can still be slightly ahead when it has in-memory/background state that has not yet been persisted. The popup shows each pool's update age so that lag is visible rather than hidden.
 
 ## Interface
 
 ### Top bar
 
 ```text
-[icon] 5h 83% / 7d 62%
+[icon] 5h 88% / 7d 83% | Reserve 7d 100%
 ```
 
 Remaining quota is color coded:
@@ -82,12 +77,12 @@ Remaining quota is color coded:
 
 Click the indicator to see:
 
-- 5-hour remaining quota and reset time
-- weekly remaining quota and reset time
-- age of the newest local Codex snapshot
-- session directory and number of recent files scanned
+- each detected quota pool separately
+- every pool's window percentages and reset times
+- age of each pool's newest local snapshot
+- whether the value came from the local response log or session fallback
 - current local refresh interval
-- **Refresh local files**
+- **Refresh local data**
 - **Settings…**
 
 ### Preferences
@@ -95,7 +90,7 @@ Click the indicator to see:
 Settings are applied live:
 
 - **Panel position:** Left / Right
-- **Font size:** 12–22 px
+- **Font size:** 12–32 px, adjusted with a numeric stepper
 - **Refresh interval:** 15 / 30 / 60 / 120 seconds
 
 Default values are Right, 14 px, and 30 seconds.
@@ -104,7 +99,8 @@ Default values are Right, 14 px, and 30 seconds.
 
 - GNOME Shell 46–50
 - Ubuntu 24.04 is the primary tested environment
-- Codex CLI / Codex app must already be creating session files
+- Codex CLI / Codex app must already be writing local Codex data
+- `sqlite3` is recommended for the freshest `logs_*.sqlite` source; session JSONL remains the automatic fallback
 
 This project is actively tested on **Ubuntu 24.04 / GNOME Shell 46**. Shell versions 47–50 are declared compatible; reports and fixes from users on those versions are welcome.
 
@@ -112,6 +108,8 @@ Check your environment:
 
 ```bash
 gnome-shell --version
+command -v sqlite3
+find ~/.codex -maxdepth 1 -type f -name 'logs_*.sqlite' -print
 find ~/.codex/sessions -type f -name '*.jsonl' | head
 ```
 
@@ -230,8 +228,10 @@ extension.js             GNOME top-bar indicator and settings bindings
 prefs.js                 GNOME/Adwaita preferences window
 icons/                   panel artwork
 schemas/                 GSettings schema
-lib/session-reader.js    async local filesystem scanner + mtime cache
-lib/rate-limits.js       pure JSONL/rate-limit parser
+lib/log-reader.js        read-only sqlite3 reader for persisted Codex response headers
+lib/session-reader.js    async session JSONL fallback reader + mtime cache
+lib/usage-reader.js      merges/prioritizes local quota sources and pools
+lib/rate-limits.js       pure quota/header/session parser
 stylesheet.css           panel UI styles
 test/                    parser, privacy, and async-I/O regression tests
 smoke-test-gnome.sh      isolated nested-GNOME load test
@@ -245,7 +245,7 @@ SECURITY.md              runtime trust boundary and security invariants
 
 See [SECURITY.md](SECURITY.md) for the explicit runtime trust boundary.
 
-The short version: the extension is a read-only viewer for rate-limit metadata already present in Codex session transcripts. Prompt text, model responses, tool calls, and credentials are not surfaced by the UI.
+The short version: the extension is a read-only viewer for quota metadata Codex has already persisted locally. It reads only selected response-header fields from `logs_*.sqlite` plus session rate-limit snapshots as fallback. Prompt text, model responses, tool calls, cookies, and credentials are not surfaced by the UI.
 
 ## Contributing
 
@@ -253,9 +253,9 @@ Bug reports, GNOME-version compatibility reports, and pull requests are welcome.
 
 ## Acknowledgements
 
-The top-bar UX was inspired by [`ondrejbecva/codex-claude-status-bar`](https://github.com/ondrejbecva/codex-claude-status-bar). The local-session-only architecture was inspired by [`Almighty-Shogun/codex-gnome-extension`](https://github.com/Almighty-Shogun/codex-gnome-extension).
+The top-bar UX was inspired by [`ondrejbecva/codex-claude-status-bar`](https://github.com/ondrejbecva/codex-claude-status-bar). The original local-only architecture was inspired by [`Almighty-Shogun/codex-gnome-extension`](https://github.com/Almighty-Shogun/codex-gnome-extension).
 
-This project intentionally does **not** copy the API/OAuth provider architecture of the former; Codex usage data comes exclusively from local session JSONL files.
+This project intentionally does **not** copy the API/OAuth provider architecture of the former; it consumes only data that the installed Codex client has already persisted locally.
 
 ## Disclaimer
 

@@ -2,6 +2,26 @@
 
 All notable changes to this project are documented here.
 
+## v0.3.0 — 2026-09-09
+
+### Added
+
+- prefer quota response headers already persisted by Codex in local `logs_*.sqlite`
+- keep independent quota pools separate in both the top bar and popup (for example normal Codex and GPT Reserve)
+- session JSONL remains an automatic fallback when the local response log is unavailable
+- end-to-end SQLite + session reader fixture in CI
+
+### Changed
+
+- font-size setting now uses a numeric `SpinRow` instead of a crowded dropdown
+- configurable top-bar font size range is now 12–32 px
+- SQLite access uses a fixed `sqlite3 -readonly` query through async `Gio.Subprocess`
+- response-log SQL returns only the quota-header slice, excluding unrelated headers such as cookies from the GJS process
+
+### Notes
+
+- the Codex desktop UI can still be slightly ahead of the newest locally persisted response-log record; the extension will not use credentials, app-server RPC, browser state, or its own backend request to eliminate that local-persistence lag
+
 ## v0.2.3 — 2026-09-09
 
 ### Fixed

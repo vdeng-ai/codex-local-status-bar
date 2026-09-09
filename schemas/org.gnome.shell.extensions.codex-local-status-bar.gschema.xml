@@ -24,6 +24,16 @@
     <value nick="twenty" value="20"/>
     <value nick="twenty-one" value="21"/>
     <value nick="twenty-two" value="22"/>
+    <value nick="twenty-three" value="23"/>
+    <value nick="twenty-four" value="24"/>
+    <value nick="twenty-five" value="25"/>
+    <value nick="twenty-six" value="26"/>
+    <value nick="twenty-seven" value="27"/>
+    <value nick="twenty-eight" value="28"/>
+    <value nick="twenty-nine" value="29"/>
+    <value nick="thirty" value="30"/>
+    <value nick="thirty-one" value="31"/>
+    <value nick="thirty-two" value="32"/>
   </enum>
 
   <schema id="org.gnome.shell.extensions.codex-local-status-bar"

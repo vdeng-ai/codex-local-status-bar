@@ -6,6 +6,7 @@ import {
   extractRateLimitSnapshot,
   isLimitExpired,
   parseRateLimitText,
+  parseResponseHeaderPools,
 } from '../lib/rate-limits.js';
 
 function event({
@@ -110,6 +111,27 @@ test('ignores Luna Reserve / gpt-reserve allowance records', () => {
   assert.equal(snapshot.fiveHour.remainingPercent, 0);
   assert.equal(snapshot.weekly.remainingPercent, 84);
   assert.equal(snapshot.observedAtMs, Date.parse('2026-09-08T07:07:37.789Z'));
+});
+
+test('parses independent Codex and GPT Reserve pools from local response headers', () => {
+  const observedAtMs = Date.parse('2026-09-09T01:20:00.000Z');
+  const body = `headers={"x-codex-active-limit": "premium", "x-codex-plan-type": "plus", "x-codex-primary-used-percent": "12", "x-codex-secondary-used-percent": "17", "x-codex-primary-window-minutes": "300", "x-codex-secondary-window-minutes": "10080", "x-codex-primary-reset-at": "1788933609", "x-codex-secondary-reset-at": "1789452121", "x-base-model-inference-primary-used-percent": "0", "x-base-model-inference-secondary-used-percent": "0", "x-base-model-inference-primary-window-minutes": "10080", "x-base-model-inference-secondary-window-minutes": "0", "x-base-model-inference-primary-reset-at": "1789521234", "x-base-model-inference-limit-name": "gpt-reserve"}`;
+
+  const pools = parseResponseHeaderPools(body, observedAtMs);
+  assert.equal(pools.length, 2);
+
+  const codex = pools.find(pool => pool.id === 'codex');
+  assert.equal(codex.name, 'Codex');
+  assert.equal(codex.primary.remainingPercent, 88);
+  assert.equal(codex.secondary.remainingPercent, 83);
+  assert.equal(codex.primary.kind, 'fiveHour');
+  assert.equal(codex.secondary.kind, 'weekly');
+
+  const reserve = pools.find(pool => pool.id === 'base_model_inference');
+  assert.equal(reserve.name, 'GPT Reserve');
+  assert.equal(reserve.windows.length, 1);
+  assert.equal(reserve.primary.remainingPercent, 100);
+  assert.equal(reserve.primary.kind, 'weekly');
 });
 
 test('marks a quota window stale after its reset timestamp passes', () => {

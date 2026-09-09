@@ -2,6 +2,10 @@
   spacing: 6px;
 }
 
+.codex-local-usage-box {
+  spacing: 6px;
+}
+
 .codex-local-icon {
   width: 16px;
   height: 16px;
@@ -17,8 +21,18 @@
 }
 
 .codex-local-separator,
-.codex-local-muted {
+.codex-local-muted,
+.codex-local-pool-name,
+.codex-local-pool-divider {
   color: rgba(205, 214, 244, 0.55);
+}
+
+.codex-local-pool-name {
+  font-weight: 600;
+}
+
+.codex-local-pool-divider {
+  padding: 0 2px;
 }
 
 .codex-local-good {
@@ -37,6 +51,7 @@
   color: rgba(205, 214, 244, 0.70);
 }
 
-.codex-local-menu-title {
+.codex-local-menu-title,
+.codex-local-pool-title {
   font-weight: 700;
 }

@@ -6,6 +6,7 @@ OUT_DIR="$ROOT/dist"
 SCHEMA="$ROOT/schemas/org.gnome.shell.extensions.codex-local-status-bar.gschema.xml"
 
 mkdir -p "$OUT_DIR"
+rm -f "$OUT_DIR"/*.shell-extension.zip
 
 gnome-extensions pack \
   --force \

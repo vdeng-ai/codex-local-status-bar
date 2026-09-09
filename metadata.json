@@ -1,7 +1,7 @@
 {
   "uuid": "codex-local-status-bar@vdeng-ai.github.io",
   "name": "Codex Local Status Bar",
-  "description": "Shows Codex 5-hour and weekly quota remaining in the GNOME top bar from local Codex session data.",
+  "description": "Shows Codex quota pools in the GNOME top bar from local Codex response logs and session data.",
   "url": "https://github.com/vdeng-ai/codex-local-status-bar",
   "shell-version": ["46", "47", "48", "49", "50"],
   "settings-schema": "org.gnome.shell.extensions.codex-local-status-bar"

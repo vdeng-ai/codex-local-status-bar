@@ -7,6 +7,8 @@ const RUNTIME_FILES = [
   'prefs.js',
   'lib/rate-limits.js',
   'lib/session-reader.js',
+  'lib/log-reader.js',
+  'lib/usage-reader.js',
 ];
 
 const FORBIDDEN = [
